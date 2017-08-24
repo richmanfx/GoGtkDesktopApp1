@@ -22,9 +22,8 @@ func main() {
 	// Позиция окна
 	window.SetPosition(gtk.WIN_POS_CENTER)
 
+	// Незаполняемая виджетами граница от краёв окна
 	window.SetBorderWidth(20)
-
-
 
 	// Заголовок окна
 	window.SetTitle("Помидор")
