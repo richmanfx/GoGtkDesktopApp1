@@ -3,9 +3,39 @@ package main
 import (
 	"os"
 	"github.com/mattn/go-gtk/gtk"
+	"encoding/json"
+	"fmt"
+	"./models"
 )
 
 var last int
+
+// Считывает конфигурационные данные из файла
+func readConfigFile() (models.Config, error) {
+
+	configFileName := "tomato.cfg"
+	var config models.Config
+
+	// Читать файл в JSON-строку
+	file, err := os.Open(configFileName)
+	defer file.Close()
+	if err == nil {
+		// Получить размер файла
+		stat, err := file.Stat()
+		if err == nil {
+			// Буфер
+			buffer := make([]byte, stat.Size())
+			_, err = file.Read(buffer)
+			if err == nil {
+				// Десериализовать
+				err = json.Unmarshal(buffer, &config)
+			}
+		}
+	}
+
+	return config, err
+}
+
 
 func main() {
 
@@ -16,85 +46,52 @@ func main() {
 	/////////////
 	// Приложение
 
-	// Новый виджет - окно
-	window := gtk.NewWindow(gtk.WINDOW_TOPLEVEL)
+	// Прочитать конфиг
+	config, err := readConfigFile()
+	if err == nil {
+		fmt.Printf("Конфигурационные параметры: %v", config)
 
-	// Позиция окна
-	window.SetPosition(gtk.WIN_POS_CENTER)
+		// Новый виджет - окно
+		window := gtk.NewWindow(gtk.WINDOW_TOPLEVEL)
 
-	// Незаполняемая виджетами граница от краёв окна
-	window.SetBorderWidth(20)
+		// Позиция окна
+		window.SetPosition(gtk.WIN_POS_CENTER)
 
-	// Заголовок окна
-	window.SetTitle("Помидор")
+		// Незаполняемая виджетами граница от краёв окна
+		window.SetBorderWidth(20)
 
-	// Размер окна
-	window.SetSizeRequest(700, 500)
+		// Заголовок окна
+		window.SetTitle("Помидор")
 
-	vbox := gtk.NewVBox(false, 1)
-	window.Add(vbox)
+		// Размер окна
+		window.SetSizeRequest(700, 500)
 
-	label := gtk.NewLabel("Это помидор")
-	vbox.Add(label)
+		vbox := gtk.NewVBox(false, 1)
+		window.Add(vbox)
 
-	hsep := gtk.NewHSeparator()
-	vbox.Add(hsep)
+		label := gtk.NewLabel("Это помидор")
+		vbox.Add(label)
 
-	button := gtk.NewButtonWithLabel("Жми!")
-	vbox.Add(button)
+		hsep := gtk.NewHSeparator()
+		vbox.Add(hsep)
 
+		button := gtk.NewButtonWithLabel("Жми!")
+		vbox.Add(button)
 
+		// Отобразить окно
+		window.ShowAll()
 
+		// При закрытии окна выйти безопасно из приложения
+		window.Connect("destroy", func() {
+			gtk.MainQuit()
+		})
 
+		//////////////////////////
+		// Передать управление GTK
+		gtk.Main()
 
-
-	// Отобразить окно
-	window.ShowAll()
-
-
-	// При закрытии окна выйти безопасно из приложения
-	window.Connect("destroy", func() {
-		gtk.MainQuit()
-	})
-
-
-
-
-
-
-	//////////////////////////
-	// Передать управление GTK
-	gtk.Main()
+	} else {
+		fmt.Printf("Ошибка при чтении файла конфигурации: %v", err)
+	}
 }
 
-func addPage(notebook *gtk.Notebook) {
-	dialog := gtk.NewDialog()
-	dialog.SetTitle("Title?")
-	dVbox := dialog.GetVBox()
-
-	input := gtk.NewEntry()
-	input.SetEditable(true)
-	dVbox.Add(input)
-	vbox := gtk.NewVBox(false, 1)
-
-
-	input.Connect("activate", func() {
-		s := input.GetText()
-		if s != "" {
-			notebook.InsertPage(vbox, gtk.NewLabel(s), last)
-			last++
-			notebook.ShowAll()
-		}
-		notebook.PrevPage()
-		dialog.Destroy()
-	})
-
-	button := gtk.NewButtonWithLabel("OK")
-	button.Connect("clicked", func() {
-		input.Emit("activate")
-	})
-	dVbox.Add(button)
-	dialog.SetModal(true)
-	dialog.ShowAll()
-
-}
