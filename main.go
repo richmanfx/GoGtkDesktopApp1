@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"./models"
+	"github.com/Sirupsen/logrus"
+	"time"
 )
 
 var last int
@@ -49,7 +51,17 @@ func main() {
 	// Прочитать конфиг
 	config, err := readConfigFile()
 	if err == nil {
-		fmt.Printf("Конфигурационные параметры: %v", config)
+		logrus.Infof("Конфигурационные параметры: %v", config)
+
+		// Рабочий ли день?
+		var workDay bool = false
+		workDay = WorkingDayWaiting(workDay)
+		if workDay {
+			fmt.Println("Наступил рабочий день")
+		}
+
+		/// Запустить цикл
+		// Сравнить текущее время с временем начала - если совпало, то запустить отсчёт
 
 		// Новый виджет - окно
 		window := gtk.NewWindow(gtk.WINDOW_TOPLEVEL)
@@ -93,5 +105,30 @@ func main() {
 	} else {
 		fmt.Printf("Ошибка при чтении файла конфигурации: %v", err)
 	}
+}
+
+// Ожидание наступления рабочего дня недели
+func WorkingDayWaiting(workDay bool) bool {
+	for workDay != true {
+		workDay = IsWorkingDay()
+		logrus.Infof("День недели: '%v'", workDay)
+		time.Sleep(time.Duration(time.Hour)) // Через 1 час снова проверить
+	}
+	return workDay
+}
+
+// Определить рабочий ли день в настоящий момент
+func IsWorkingDay() bool {
+	weekday := time.Now().Weekday().String()
+	//logrus.Infof("День недели: %v", weekday)
+	workdays := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+	var status bool = false
+	for _, day := range workdays {
+		if weekday == day {
+			status = true
+			break
+		}
+	}
+	return status
 }
 
